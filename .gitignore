@@ -1,0 +1,9 @@
+.idea
+.env
+
+deploy/env
+deploy/db
+deploy/redis
+
+go.work
+go.work.sum

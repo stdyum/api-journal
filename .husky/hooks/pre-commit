@@ -1,0 +1,150 @@
+#!/bin/sh
+
+workfile() {
+  check_uncommitted_changes() {
+      echo "Checking uncommitted changes"
+
+      if [ -n "$(git status -s)" ]; then
+          git status -s
+          echo "Error: Uncommitted changes found in the repository."
+          exit 1
+      fi
+
+      echo "Uncommitted changes not found"
+  }
+
+  check_unpushed_changes() {
+      echo "Checking unpushed changes"
+
+      current_branch=$(git rev-parse --abbrev-ref HEAD)
+      remote_branch="origin/$current_branch"
+
+      if ! git rev-parse --verify "$remote_branch" >/dev/null 2>&1; then
+          echo "Error: Remote branch '$remote_branch' does not exist."
+          exit 1
+      fi
+
+      if [ "$(git rev-list HEAD ^"$remote_branch" --count)" -gt 0 ]; then
+          git rev-list HEAD ^"$remote_branch"
+          echo "Error: Unpushed changes found in the repository."
+          exit 1
+      fi
+
+      echo "Unpushed changes not found"
+  }
+
+  parse_work_file() {
+      while IFS= read -r line; do
+          # shellcheck disable=SC2039
+          if [[ $line == *//* ]]; then
+            echo "Detected line: $line"
+
+            path=$(echo "$line" | awk -F '//' '{print $1}')
+            source=$(echo "$line" | awk -F '//' '{print $2}')
+
+            path="${path#"${path%%[![:space:]]*}"}"
+            path="${path%"${path##*[![:space:]]}"}"
+
+            source="${source#"${source%%[![:space:]]*}"}"
+            source="${source%"${source##*[![:space:]]}"}"
+
+            update_dependency "$path" "$source"
+          fi
+      done < "go.work"
+  }
+
+  update_dependency() {
+    path=$1
+    source=$2
+
+    start_dir=$(pwd)
+
+    echo "------------------"
+    echo "Parsing dependency"
+    echo "Path $path"
+    echo "Source $source"
+
+    cd "$path" || (echo "cannot enter $path directory" && exit 1)
+
+    check_uncommitted_changes
+    check_unpushed_changes
+
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    cd "$start_dir" || (echo "cannot enter $start_dir directory" && exit 1)
+
+    echo "Updating go.mod lib to branch '$branch'"
+
+    go get "$source@$branch"
+    if [ $? -ne 0 ]; then
+      echo "Cannot get library"
+      exit 1
+    fi
+
+    echo "Successful"
+    echo "------------------"
+  }
+
+  parse_work_file
+}
+
+go_build() {
+  go build -v ./...
+
+    # shellcheck disable=SC2181
+    if [ $? -ne 0 ]; then
+      echo "Build failed."
+      exit 1
+    fi
+
+    echo "Build passed successfully!"
+}
+
+go_test() {
+  go test -v ./...
+
+  # shellcheck disable=SC2181
+  if [ $? -ne 0 ]; then
+    echo "Tests failed."
+    exit 1
+  fi
+
+  echo "Tests passed successfully!"
+}
+
+go_test_mod() {
+  mv go.work go.no.work
+  go test -v ./...
+
+  if [ $? -ne 0 ]; then
+    mv go.no.work go.work
+    echo "Tests failed."
+    exit 1
+  fi
+
+  mv go.no.work go.work
+  echo "Tests passed successfully!"
+}
+
+go_build_mod() {
+  mv go.work go.no.work
+  go build -v ./...
+
+  if [ $? -ne 0 ]; then
+  mv go.no.work go.work
+    echo "Build failed."
+    exit 1
+  fi
+
+  mv go.no.work go.work
+  echo "Build passed successfully!"
+}
+
+go_build
+go_test
+
+workfile
+
+go_build_mod
+go_test_mod
+
+exit 0
