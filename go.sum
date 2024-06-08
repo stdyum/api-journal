@@ -142,6 +142,8 @@ github.com/stdyum/api-common v0.0.0-20240528194310-5486bc5eb0bb h1:Q/NmBP8MlbmzU
 github.com/stdyum/api-common v0.0.0-20240528194310-5486bc5eb0bb/go.mod h1:NRsEqaaHjxAuoWbKLzsAA9kaJPGOO9NS07EV40AXx+s=
 github.com/stdyum/api-common v0.0.0-20240604220634-b78ac25eea03 h1:xHXNyecRUKuyoZ6GX6wd4PpHG2nBCberb2K4pMs38CU=
 github.com/stdyum/api-common v0.0.0-20240604220634-b78ac25eea03/go.mod h1:NRsEqaaHjxAuoWbKLzsAA9kaJPGOO9NS07EV40AXx+s=
+github.com/stdyum/api-common v0.0.0-20240608004528-4be8328dc56b h1:KDHvt48XW+O5IXcNj6lVlT/CzMygML8HqUcmJrmiCxs=
+github.com/stdyum/api-common v0.0.0-20240608004528-4be8328dc56b/go.mod h1:NRsEqaaHjxAuoWbKLzsAA9kaJPGOO9NS07EV40AXx+s=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
