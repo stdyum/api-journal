@@ -32,6 +32,14 @@ type EntriesFilter struct {
 	TeacherId    uuid.UUID
 	GroupId      uuid.UUID
 	SubjectId    uuid.UUID
+	Cursor       string
+	Limit        int
+}
+
+type Entries struct {
+	List  []Entry
+	Next  string
+	Limit int
 }
 
 type Entry struct {

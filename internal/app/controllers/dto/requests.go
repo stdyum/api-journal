@@ -4,6 +4,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type GetOptionsRequest struct {
+	Cursor string `form:"cursor"`
+	Limit  int    `form:"limit"`
+}
+
 type GetJournalRequest struct {
 	Type      string    `form:"type"`
 	SubjectId uuid.UUID `form:"subjectId"`

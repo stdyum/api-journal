@@ -12,7 +12,7 @@ import (
 
 type Controller interface {
 	GetJournal(ctx context.Context, enrollment models.Enrollment, request dto.GetJournalRequest) (dto.JournalResponse, error)
-	GetOptions(ctx context.Context, enrollment models.Enrollment) ([]dto.OptionResponse, error)
+	GetOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (dto.OptionsResponse, error)
 
 	AddMark(ctx context.Context, enrollment models.Enrollment, request dto.AddMarkRequest) (dto.AddMarkResponse, error)
 	DeleteMark(ctx context.Context, enrollment models.Enrollment, request dto.DeleteMarkRequest) error

@@ -11,6 +11,12 @@ type OptionResponse struct {
 	Teacher OptionResponseTeacher `json:"teacher"`
 }
 
+type OptionsResponse struct {
+	Options []OptionResponse `json:"options"`
+	Next    string           `json:"next"`
+	Limit   int              `json:"limit"`
+}
+
 type OptionResponseSubject struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`

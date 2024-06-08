@@ -10,3 +10,9 @@ type Option struct {
 	Group   models.Group
 	Teacher models.Teacher
 }
+
+type OptionsWithPagination struct {
+	Options []Option
+	Next    string
+	Limit   int
+}

@@ -9,19 +9,32 @@ import (
 type OptionsBuilder struct {
 	options  []models.Option
 	typesIds types_registry.TypesIds
+	next     string
+	limit    int
 }
 
 func NewOptionsBuilder() *OptionsBuilder {
 	return &OptionsBuilder{}
 }
 
-func (b *OptionsBuilder) Build() ([]models.Option, types_registry.TypesIds) {
-	return b.options, b.typesIds
+func (b *OptionsBuilder) Build() (models.OptionsWithPagination, types_registry.TypesIds) {
+	return models.OptionsWithPagination{
+		Options: b.options,
+		Next:    b.next,
+		Limit:   b.limit,
+	}, b.typesIds
 }
 
 func (b *OptionsBuilder) Append(options ...models.Option) *OptionsBuilder {
 	b.options = append(b.options, options...)
 	b.appendTypeIdsFromOptionsArray(options)
+	return b
+}
+
+func (b *OptionsBuilder) AppendWithPagination(options models.OptionsWithPagination) *OptionsBuilder {
+	b.Append(options.Options...)
+	b.next = options.Next
+	b.limit = options.Limit
 	return b
 }
 

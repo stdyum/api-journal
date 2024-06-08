@@ -49,7 +49,13 @@ func (h *http) GetJournal(ctx *hc.Context) {
 func (h *http) GetOptions(ctx *hc.Context) {
 	enrollment := ctx.Enrollment()
 
-	options, err := h.controller.GetOptions(ctx, enrollment)
+	limit, _ := ctx.QueryInt("limit")
+	request := dto.GetOptionsRequest{
+		Cursor: ctx.Query("cursor"),
+		Limit:  limit,
+	}
+
+	options, err := h.controller.GetOptions(ctx, enrollment, request)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

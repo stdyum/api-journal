@@ -12,7 +12,7 @@ import (
 type Schedule interface {
 	GetLessonById(ctx context.Context, request GetLessonByIdRequest) (Lesson, error)
 	GetLessons(ctx context.Context, filter EntriesFilter) ([]Lesson, error)
-	GetUniqueEntries(ctx context.Context, filter EntriesFilter) ([]Entry, error)
+	GetUniqueEntries(ctx context.Context, filter EntriesFilter) (Entries, error)
 }
 
 type schedule struct {
@@ -143,29 +143,35 @@ func (s *schedule) GetLessons(ctx context.Context, filter EntriesFilter) ([]Less
 	})
 }
 
-func (s *schedule) GetUniqueEntries(ctx context.Context, filter EntriesFilter) ([]Entry, error) {
+func (s *schedule) GetUniqueEntries(ctx context.Context, filter EntriesFilter) (Entries, error) {
 	in := proto.EntriesFilter{
 		Token:        filter.Token,
 		StudyPlaceId: filter.StudyPlaceId.String(),
 		TeacherId:    filter.TeacherId.String(),
 		GroupId:      filter.GroupId.String(),
 		SubjectId:    filter.SubjectId.String(),
+		Cursor:       filter.Cursor,
+		Limit:        int32(filter.Limit),
 	}
 
 	out, err := s.server.GetUniqueEntries(ctx, &in)
 	if err != nil {
-		return nil, err
+		return Entries{}, err
 	}
 
 	entries := make([]Entry, len(out.List))
 	for i, entry := range out.List {
 		entries[i], err = s.convertGRpcEntryToModel(entry)
 		if err != nil {
-			return nil, err
+			return Entries{}, err
 		}
 	}
 
-	return entries, nil
+	return Entries{
+		List:  entries,
+		Next:  out.Next,
+		Limit: int(out.Limit),
+	}, nil
 }
 
 func (s *schedule) convertGRpcEntryToModel(in *proto.Entry) (Entry, error) {

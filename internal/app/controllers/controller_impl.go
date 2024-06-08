@@ -11,12 +11,16 @@ import (
 	"github.com/stdyum/api-journal/internal/modules/types_registry"
 )
 
-func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollment) ([]dto.OptionResponse, error) {
+func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (dto.OptionsResponse, error) {
+	if request.Limit == 0 {
+		request.Limit = 10
+	}
+
 	optionsBuilder := NewOptionsBuilder()
-	if enrollment.Role == models.RoleStudent {
+	if enrollment.Role == models.RoleStudent && request.Cursor == "" {
 		options, err := c.getStudentOptions(ctx, enrollment)
 		if err != nil {
-			return nil, err
+			return dto.OptionsResponse{}, err
 		}
 
 		optionsBuilder.Append(options...)
@@ -24,21 +28,21 @@ func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollmen
 
 	hasPermissionToViewAll := enrollment.Permissions.Assert("viewJournal") == nil
 	if enrollment.Role == models.RoleTeacher && !hasPermissionToViewAll {
-		options, err := c.getTeacherOptions(ctx, enrollment)
+		options, err := c.getTeacherOptions(ctx, enrollment, request)
 		if err != nil {
-			return nil, err
+			return dto.OptionsResponse{}, err
 		}
 
-		optionsBuilder.Append(options...)
+		optionsBuilder.AppendWithPagination(options)
 	}
 
 	if hasPermissionToViewAll {
-		options, err := c.getAllOptions(ctx, enrollment)
+		options, err := c.getAllOptions(ctx, enrollment, request)
 		if err != nil {
-			return nil, err
+			return dto.OptionsResponse{}, err
 		}
 
-		optionsBuilder.Append(options...)
+		optionsBuilder.AppendWithPagination(options)
 	}
 
 	options, typesIds := optionsBuilder.Build()
@@ -47,32 +51,36 @@ func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollmen
 
 	typesModels, err := c.typesRegistry.GetTypesById(ctx, typesIds)
 	if err != nil {
-		return nil, err
+		return dto.OptionsResponse{}, err
 	}
 
-	for i := range options {
-		options[i].Subject = typesModels.Subjects[options[i].Subject.ID]
-		options[i].Group = typesModels.Groups[options[i].Group.ID]
-		options[i].Teacher = typesModels.Teachers[options[i].Teacher.ID]
+	for i := range options.Options {
+		options.Options[i].Subject = typesModels.Subjects[options.Options[i].Subject.ID]
+		options.Options[i].Group = typesModels.Groups[options.Options[i].Group.ID]
+		options.Options[i].Teacher = typesModels.Teachers[options.Options[i].Teacher.ID]
 	}
 
-	return uslices.MapFunc(options, func(item Option) dto.OptionResponse {
-		return dto.OptionResponse{
-			Type: item.Type,
-			Subject: dto.OptionResponseSubject{
-				ID:   item.Subject.ID,
-				Name: item.Subject.Name,
-			},
-			Group: dto.OptionResponseGroup{
-				ID:   item.Group.ID,
-				Name: item.Group.Name,
-			},
-			Teacher: dto.OptionResponseTeacher{
-				ID:   item.Teacher.ID,
-				Name: item.Teacher.Name,
-			},
-		}
-	}), nil
+	return dto.OptionsResponse{
+		Options: uslices.MapFunc(options.Options, func(item Option) dto.OptionResponse {
+			return dto.OptionResponse{
+				Type: item.Type,
+				Subject: dto.OptionResponseSubject{
+					ID:   item.Subject.ID,
+					Name: item.Subject.Name,
+				},
+				Group: dto.OptionResponseGroup{
+					ID:   item.Group.ID,
+					Name: item.Group.Name,
+				},
+				Teacher: dto.OptionResponseTeacher{
+					ID:   item.Teacher.ID,
+					Name: item.Teacher.Name,
+				},
+			}
+		}),
+		Next:  options.Next,
+		Limit: options.Limit,
+	}, nil
 }
 
 func (c *controller) getStudentOptions(ctx context.Context, enrollment models.Enrollment) ([]Option, error) {
@@ -95,25 +103,32 @@ func (c *controller) getStudentOptions(ctx context.Context, enrollment models.En
 	}), nil
 }
 
-func (c *controller) getTeacherOptions(ctx context.Context, enrollment models.Enrollment) ([]Option, error) {
-	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{TeacherId: enrollment.TypeId})
+func (c *controller) getTeacherOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (OptionsWithPagination, error) {
+	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{
+		TeacherId: enrollment.TypeId,
+		Cursor:    request.Cursor,
+		Limit:     request.Limit,
+	})
 }
 
-func (c *controller) getAllOptions(ctx context.Context, enrollment models.Enrollment) ([]Option, error) {
-	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{})
+func (c *controller) getAllOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (OptionsWithPagination, error) {
+	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{
+		Cursor: request.Cursor,
+		Limit:  request.Limit,
+	})
 }
 
-func (c *controller) getOptionsAccordingToScheduleEntitiesFilter(ctx context.Context, enrollment models.Enrollment, entriesFilter schedule.EntriesFilter) ([]Option, error) {
+func (c *controller) getOptionsAccordingToScheduleEntitiesFilter(ctx context.Context, enrollment models.Enrollment, entriesFilter schedule.EntriesFilter) (OptionsWithPagination, error) {
 	entriesFilter.Token = enrollment.Token
 	entriesFilter.StudyPlaceId = enrollment.StudyPlaceId
 
 	entries, err := c.schedule.GetUniqueEntries(ctx, entriesFilter)
 	if err != nil {
-		return nil, err
+		return OptionsWithPagination{}, err
 	}
 
-	options := make([]Option, len(entries))
-	for i, entry := range entries {
+	options := make([]Option, len(entries.List))
+	for i, entry := range entries.List {
 		options[i] = Option{
 			Type: "group",
 			Subject: models.Subject{
@@ -128,5 +143,9 @@ func (c *controller) getOptionsAccordingToScheduleEntitiesFilter(ctx context.Con
 		}
 	}
 
-	return options, nil
+	return OptionsWithPagination{
+		Options: options,
+		Next:    entries.Next,
+		Limit:   entries.Limit,
+	}, nil
 }
