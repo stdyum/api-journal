@@ -131,15 +131,18 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 
 	lessonMap := make(map[uuid.UUID]schedule.Lesson, len(lessons))
 	lessonIds := make([]uuid.UUID, len(lessons))
-	subjectIds := make([]uuid.UUID, len(lessons))
-	subjects := make([]models.Subject, len(lessons))
+	subjectsMap := make(map[uuid.UUID]models.Subject)
 	for i, lesson := range lessons {
 		lessonMap[lesson.ID] = lesson
 		lessonIds[i] = lesson.ID
-		subjectIds[i] = lesson.SubjectId
-		subjects[i] = models.Subject{
+		subjectsMap[lesson.SubjectId] = models.Subject{
 			ID: lesson.SubjectId,
 		}
+	}
+
+	subjectIds := make([]uuid.UUID, 0, len(subjectsMap))
+	for _, subject := range subjectsMap {
+		subjectIds = append(subjectIds, subject.ID)
 	}
 
 	typesModels, err := c.typesRegistry.GetTypesById(ctx, types_registry.TypesIds{
@@ -151,14 +154,12 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 		return dto.JournalResponse{}, err
 	}
 
-	for i := range subjects {
-		subjects[i].Name = typesModels.Subjects[subjects[i].ID].Name
+	subjects := make([]models.Subject, 0, len(subjectsMap))
+	for i := range subjectsMap {
+		subjects = append(subjects, typesModels.Subjects[subjectsMap[i].ID])
 	}
 
-	marks, err := c.repository.GetStudentMarks(ctx, enrollment.StudyPlaceId, lessonIds, enrollment.TypeId)
-	if err != nil {
-		return dto.JournalResponse{}, err
-	}
+	marks, _ := c.repository.GetStudentMarks(ctx, enrollment.StudyPlaceId, lessonIds, enrollment.TypeId)
 
 	groupedMarks := uslices.GroupBy(marks, func(item entities.Mark) string {
 		return item.LessonId.String() + item.StudentId.String()

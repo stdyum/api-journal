@@ -12,9 +12,9 @@ import (
 
 func (r *repository) GetStudentMarks(ctx context.Context, studyPlaceId uuid.UUID, lessonIds []uuid.UUID, studentId uuid.UUID) ([]entities.Mark, error) {
 	scanner := r.database.Query(
-		"SELECT id, study_place_id, mark, student_id, teacher_id, lesson_id FROM marks WHERE study_place_id = ? AND lesson_id IN ? AND student_id = ? ALLOW FILTERING",
+		"SELECT id, study_place_id, mark, student_id, teacher_id, lesson_id FROM marks WHERE study_place_id = ? AND student_id = ? ALLOW FILTERING",
 		gocql.UUID(studyPlaceId),
-		uslices.MapFunc(lessonIds, func(item uuid.UUID) gocql.UUID { return gocql.UUID(item) }),
+		//uslices.MapFunc(lessonIds, func(item uuid.UUID) gocql.UUID { return gocql.UUID(item) }),
 		gocql.UUID(studentId),
 	).
 		WithContext(ctx).
