@@ -34,3 +34,8 @@ type GetStudentGroupsRequest struct {
 	StudyPlaceId uuid.UUID
 	StudentId    uuid.UUID
 }
+
+type GetGroupIdsWithStudentsRequest struct {
+	Token        string
+	StudyPlaceId uuid.UUID
+}

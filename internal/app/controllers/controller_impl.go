@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/stdyum/api-common/models"
 	"github.com/stdyum/api-common/uslices"
 	"github.com/stdyum/api-journal/internal/app/controllers/dto"
@@ -28,7 +29,15 @@ func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollmen
 
 	hasPermissionToViewAll := enrollment.Permissions.Assert("viewJournal") == nil
 	if enrollment.Role == models.RoleTeacher && !hasPermissionToViewAll {
-		options, err := c.getTeacherOptions(ctx, enrollment, request)
+		groupIds, err := c.typesRegistry.GetGroupIdsWithStudents(ctx, types_registry.GetGroupIdsWithStudentsRequest{
+			Token:        enrollment.Token,
+			StudyPlaceId: enrollment.StudyPlaceId,
+		})
+		if err != nil {
+			return dto.OptionsResponse{}, err
+		}
+
+		options, err := c.getTeacherOptions(ctx, enrollment, request, groupIds)
 		if err != nil {
 			return dto.OptionsResponse{}, err
 		}
@@ -37,7 +46,15 @@ func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollmen
 	}
 
 	if hasPermissionToViewAll {
-		options, err := c.getAllOptions(ctx, enrollment, request)
+		groupIds, err := c.typesRegistry.GetGroupIdsWithStudents(ctx, types_registry.GetGroupIdsWithStudentsRequest{
+			Token:        enrollment.Token,
+			StudyPlaceId: enrollment.StudyPlaceId,
+		})
+		if err != nil {
+			return dto.OptionsResponse{}, err
+		}
+
+		options, err := c.getAllOptions(ctx, enrollment, request, groupIds)
 		if err != nil {
 			return dto.OptionsResponse{}, err
 		}
@@ -76,6 +93,7 @@ func (c *controller) GetOptions(ctx context.Context, enrollment models.Enrollmen
 					ID:   item.Teacher.ID,
 					Name: item.Teacher.Name,
 				},
+				Editable: item.Editable,
 			}
 		}),
 		Next:  options.Next,
@@ -99,22 +117,25 @@ func (c *controller) getStudentOptions(ctx context.Context, enrollment models.En
 			Group: models.Group{
 				ID: item.ID,
 			},
+			Editable: false,
 		}
 	}), nil
 }
 
-func (c *controller) getTeacherOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (OptionsWithPagination, error) {
+func (c *controller) getTeacherOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest, ids []uuid.UUID) (OptionsWithPagination, error) {
 	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{
 		TeacherId: enrollment.TypeId,
 		Cursor:    request.Cursor,
 		Limit:     request.Limit,
+		GroupIds:  ids,
 	})
 }
 
-func (c *controller) getAllOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest) (OptionsWithPagination, error) {
+func (c *controller) getAllOptions(ctx context.Context, enrollment models.Enrollment, request dto.GetOptionsRequest, ids []uuid.UUID) (OptionsWithPagination, error) {
 	return c.getOptionsAccordingToScheduleEntitiesFilter(ctx, enrollment, schedule.EntriesFilter{
-		Cursor: request.Cursor,
-		Limit:  request.Limit,
+		Cursor:   request.Cursor,
+		Limit:    request.Limit,
+		GroupIds: ids,
 	})
 }
 
@@ -140,6 +161,7 @@ func (c *controller) getOptionsAccordingToScheduleEntitiesFilter(ctx context.Con
 			Teacher: models.Teacher{
 				ID: entry.TeacherId,
 			},
+			Editable: enrollment.Role == models.RoleTeacher && enrollment.TypeId == entry.TeacherId,
 		}
 	}
 

@@ -87,8 +87,10 @@ func (s *schedule) GetLessons(ctx context.Context, filter EntriesFilter) ([]Less
 		Token:        filter.Token,
 		StudyPlaceId: filter.StudyPlaceId.String(),
 		TeacherId:    filter.TeacherId.String(),
-		GroupId:      filter.GroupId.String(),
-		SubjectId:    filter.SubjectId.String(),
+		GroupIds: uslices.MapFunc(filter.GroupIds, func(item uuid.UUID) string {
+			return item.String()
+		}),
+		SubjectId: filter.SubjectId.String(),
 	}
 
 	out, err := s.server.GetLessons(ctx, &in)
@@ -148,10 +150,12 @@ func (s *schedule) GetUniqueEntries(ctx context.Context, filter EntriesFilter) (
 		Token:        filter.Token,
 		StudyPlaceId: filter.StudyPlaceId.String(),
 		TeacherId:    filter.TeacherId.String(),
-		GroupId:      filter.GroupId.String(),
-		SubjectId:    filter.SubjectId.String(),
-		Cursor:       filter.Cursor,
-		Limit:        int32(filter.Limit),
+		GroupIds: uslices.MapFunc(filter.GroupIds, func(item uuid.UUID) string {
+			return item.String()
+		}),
+		SubjectId: filter.SubjectId.String(),
+		Cursor:    filter.Cursor,
+		Limit:     int32(filter.Limit),
 	}
 
 	out, err := s.server.GetUniqueEntries(ctx, &in)

@@ -13,6 +13,7 @@ type TypesRegistry interface {
 	GetTypesById(ctx context.Context, typesIds TypesIds) (TypesModels, error)
 	GetStudentsInGroup(ctx context.Context, req GetStudentsRequest) ([]models.Student, error)
 	GetStudentGroups(ctx context.Context, req GetStudentGroupsRequest) ([]models.Group, error)
+	GetGroupIdsWithStudents(ctx context.Context, req GetGroupIdsWithStudentsRequest) ([]uuid.UUID, error)
 }
 
 type typesRegistry struct {
@@ -120,6 +121,20 @@ func (t *typesRegistry) GetStudentGroups(ctx context.Context, req GetStudentGrou
 			ID:   id,
 			Name: item.Name,
 		}, nil
+	})
+}
+
+func (t *typesRegistry) GetGroupIdsWithStudents(ctx context.Context, req GetGroupIdsWithStudentsRequest) ([]uuid.UUID, error) {
+	groups, err := t.server.GetGroupIdsWithStudents(ctx, &proto.Auth{
+		Token:        req.Token,
+		StudyPlaceId: req.StudyPlaceId.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return uslices.MapFuncErr(groups.List, func(item string) (uuid.UUID, error) {
+		return uuid.Parse(item)
 	})
 }
 

@@ -5,10 +5,11 @@ import (
 )
 
 type OptionResponse struct {
-	Type    string                `json:"type"`
-	Subject OptionResponseSubject `json:"subject"`
-	Group   OptionResponseGroup   `json:"group"`
-	Teacher OptionResponseTeacher `json:"teacher"`
+	Type     string                `json:"type"`
+	Subject  OptionResponseSubject `json:"subject"`
+	Group    OptionResponseGroup   `json:"group"`
+	Teacher  OptionResponseTeacher `json:"teacher"`
+	Editable bool                  `json:"editable"`
 }
 
 type OptionsResponse struct {

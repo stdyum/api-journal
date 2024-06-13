@@ -30,8 +30,8 @@ type EntriesFilter struct {
 	Token        string
 	StudyPlaceId uuid.UUID
 	TeacherId    uuid.UUID
-	GroupId      uuid.UUID
 	SubjectId    uuid.UUID
+	GroupIds     []uuid.UUID
 	Cursor       string
 	Limit        int
 }

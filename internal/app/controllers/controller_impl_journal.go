@@ -33,7 +33,7 @@ func (c *controller) getGroupJournal(ctx context.Context, enrollment models.Enro
 		Token:        enrollment.Token,
 		StudyPlaceId: enrollment.StudyPlaceId,
 		TeacherId:    request.TeacherId,
-		GroupId:      request.GroupId,
+		GroupIds:     []uuid.UUID{request.GroupId},
 		SubjectId:    request.SubjectId,
 	}
 
@@ -63,11 +63,7 @@ func (c *controller) getGroupJournal(ctx context.Context, enrollment models.Enro
 		studentMap[student.ID] = student
 	}
 
-	marks, err := c.repository.GetLessonsMarks(ctx, enrollment.StudyPlaceId, lessonIds)
-	if err != nil {
-		return dto.JournalResponse{}, err
-	}
-
+	marks, _ := c.repository.GetLessonsMarks(ctx, enrollment.StudyPlaceId, lessonIds)
 	groupedMarks := uslices.GroupBy(marks, func(item entities.Mark) string {
 		return item.LessonId.String() + item.StudentId.String()
 	})
@@ -121,7 +117,7 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 	filter := schedule.EntriesFilter{
 		Token:        enrollment.Token,
 		StudyPlaceId: enrollment.StudyPlaceId,
-		GroupId:      request.GroupId,
+		GroupIds:     []uuid.UUID{request.GroupId},
 	}
 
 	lessons, err := c.schedule.GetLessons(ctx, filter)

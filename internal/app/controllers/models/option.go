@@ -5,10 +5,11 @@ import (
 )
 
 type Option struct {
-	Type    string
-	Subject models.Subject
-	Group   models.Group
-	Teacher models.Teacher
+	Type     string
+	Subject  models.Subject
+	Group    models.Group
+	Teacher  models.Teacher
+	Editable bool
 }
 
 type OptionsWithPagination struct {
