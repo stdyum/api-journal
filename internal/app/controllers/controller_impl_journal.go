@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/stdyum/api-common/models"
@@ -158,14 +159,32 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 	marks, _ := c.repository.GetStudentMarks(ctx, enrollment.StudyPlaceId, lessonIds, enrollment.TypeId)
 
 	groupedMarks := uslices.GroupBy(marks, func(item entities.Mark) string {
-		return item.LessonId.String() + item.StudentId.String()
+		return lessonMap[item.LessonId].StartTime.Format("20060102") + lessonMap[item.LessonId].SubjectId.String()
+	})
+
+	groupedLessons := uslices.GroupBy(lessons, func(item schedule.Lesson) string {
+		return item.StartTime.Format("20060102")
+	})
+
+	slices.SortFunc(subjects, func(a, b models.Subject) int {
+		if a.Name > b.Name {
+			return 1
+		} else if a.Name < b.Name {
+			return -1
+		} else {
+			return 0
+		}
+	})
+
+	slices.SortFunc(groupedLessons, func(a, b []schedule.Lesson) int {
+		return a[0].StartTime.Compare(b[0].StartTime)
 	})
 
 	cells := uslices.MapFunc(groupedMarks, func(marks []entities.Mark) dto.JournalCellResponse {
 		return dto.JournalCellResponse{
 			Point: dto.JournalCellPointResponse{
 				RowId:    lessonMap[marks[0].LessonId].SubjectId.String(),
-				ColumnId: marks[0].LessonId.String(),
+				ColumnId: lessonMap[marks[0].LessonId].StartTime.Format("20060102"),
 			},
 			Marks: uslices.MapFunc(marks, func(item entities.Mark) dto.JournalCellMarkResponse {
 				return dto.JournalCellMarkResponse{
@@ -185,10 +204,10 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 		}
 	})
 
-	columns := uslices.MapFunc(lessons, func(item schedule.Lesson) dto.JournalColumnResponse {
+	columns := uslices.MapFunc(groupedLessons, func(item []schedule.Lesson) dto.JournalColumnResponse {
 		return dto.JournalColumnResponse{
-			Id:    item.ID.String(),
-			Title: item.StartTime.Format("2006-01-02 15:04"),
+			Id:    item[0].StartTime.Format("20060102"),
+			Title: item[0].StartTime.Format("2006-01-02"),
 		}
 	})
 
