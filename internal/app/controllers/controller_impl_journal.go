@@ -69,6 +69,20 @@ func (c *controller) getGroupJournal(ctx context.Context, enrollment models.Enro
 		return item.LessonId.String() + item.StudentId.String()
 	})
 
+	slices.SortFunc(students, func(a, b models.Student) int {
+		if a.Name > b.Name {
+			return 1
+		} else if a.Name < b.Name {
+			return -1
+		} else {
+			return 0
+		}
+	})
+
+	slices.SortFunc(lessons, func(a, b schedule.Lesson) int {
+		return a.StartTime.Compare(b.StartTime)
+	})
+
 	cells := uslices.MapFunc(groupedMarks, func(marks []entities.Mark) dto.JournalCellResponse {
 		return dto.JournalCellResponse{
 			Point: dto.JournalCellPointResponse{
