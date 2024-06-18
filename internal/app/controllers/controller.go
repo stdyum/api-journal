@@ -22,6 +22,10 @@ type Controller interface {
 	AddLessonInfo(ctx context.Context, enrollment models.Enrollment, request dto.AddLessonInfoRequest) (dto.AddLessonInfoResponse, error)
 	DeleteLessonInfo(ctx context.Context, enrollment models.Enrollment, request dto.DeleteLessonInfoRequest) error
 	EditLessonInfo(ctx context.Context, enrollment models.Enrollment, request dto.EditLessonInfoRequest) error
+
+	AddAbsences(ctx context.Context, enrollment models.Enrollment, request dto.AddAbsenceRequest) (dto.AddAbsenceResponse, error)
+	DeleteAbsence(ctx context.Context, enrollment models.Enrollment, request dto.DeleteAbsenceRequest) error
+	EditAbsence(ctx context.Context, enrollment models.Enrollment, request dto.EditAbsenceRequest) error
 }
 
 type controller struct {

@@ -9,6 +9,7 @@ import (
 	"github.com/stdyum/api-common/models"
 	"github.com/stdyum/api-common/uslices"
 	"github.com/stdyum/api-journal/internal/app/controllers/dto"
+	. "github.com/stdyum/api-journal/internal/app/controllers/models"
 	"github.com/stdyum/api-journal/internal/app/repositories/entities"
 	"github.com/stdyum/api-journal/internal/modules/schedule"
 	"github.com/stdyum/api-journal/internal/modules/types_registry"
@@ -65,7 +66,24 @@ func (c *controller) getGroupJournal(ctx context.Context, enrollment models.Enro
 	}
 
 	marks, _ := c.repository.GetLessonsMarks(ctx, enrollment.StudyPlaceId, lessonIds)
-	groupedMarks := uslices.GroupBy(marks, func(item entities.Mark) string {
+	absences, _ := c.repository.GetLessonsAbsences(ctx, enrollment.StudyPlaceId, lessonIds)
+
+	cellEntries := uslices.MapFunc(marks, func(item entities.Mark) CellEntry {
+		return CellEntry{
+			Mark:      &item,
+			LessonId:  item.LessonId,
+			StudentId: item.StudentId,
+		}
+	})
+	cellEntries = append(cellEntries, uslices.MapFunc(absences, func(item entities.Absence) CellEntry {
+		return CellEntry{
+			Absence:   &item,
+			LessonId:  item.LessonId,
+			StudentId: item.StudentId,
+		}
+	})...)
+
+	groupedEntries := uslices.GroupBy(cellEntries, func(item CellEntry) string {
 		return item.LessonId.String() + item.StudentId.String()
 	})
 
@@ -83,18 +101,26 @@ func (c *controller) getGroupJournal(ctx context.Context, enrollment models.Enro
 		return a.StartTime.Compare(b.StartTime)
 	})
 
-	cells := uslices.MapFunc(groupedMarks, func(marks []entities.Mark) dto.JournalCellResponse {
+	cells := uslices.MapFunc(groupedEntries, func(entries []CellEntry) dto.JournalCellResponse {
 		return dto.JournalCellResponse{
 			Point: dto.JournalCellPointResponse{
-				RowId:    marks[0].StudentId.String(),
-				ColumnId: marks[0].LessonId.String(),
+				RowId:    entries[0].StudentId.String(),
+				ColumnId: entries[0].LessonId.String(),
 			},
-			Marks: uslices.MapFunc(marks, func(item entities.Mark) dto.JournalCellMarkResponse {
+			Marks: uslices.MapFunc(uslices.FilterFunc(entries, func(item CellEntry) bool { return item.Mark != nil }), func(item CellEntry) dto.JournalCellMarkResponse {
 				return dto.JournalCellMarkResponse{
-					Id:        item.ID.String(),
-					Mark:      item.Mark,
-					LessonId:  item.LessonId.String(),
-					StudentId: item.StudentId.String(),
+					Id:        item.Mark.ID.String(),
+					Mark:      item.Mark.Mark,
+					LessonId:  item.Mark.LessonId.String(),
+					StudentId: item.Mark.StudentId.String(),
+				}
+			}),
+			Absences: uslices.MapFunc(uslices.FilterFunc(entries, func(item CellEntry) bool { return item.Absence != nil }), func(item CellEntry) dto.JournalCellAbsenceResponse {
+				return dto.JournalCellAbsenceResponse{
+					Id:        item.Absence.ID.String(),
+					Absence:   item.Absence.Absence,
+					LessonId:  item.Absence.LessonId.String(),
+					StudentId: item.Absence.StudentId.String(),
 				}
 			}),
 		}
@@ -169,10 +195,25 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 	for i := range subjectsMap {
 		subjects = append(subjects, typesModels.Subjects[subjectsMap[i].ID])
 	}
-
 	marks, _ := c.repository.GetStudentMarks(ctx, enrollment.StudyPlaceId, lessonIds, enrollment.TypeId)
+	absences, _ := c.repository.GetStudentAbsences(ctx, enrollment.StudyPlaceId, lessonIds, enrollment.TypeId)
 
-	groupedMarks := uslices.GroupBy(marks, func(item entities.Mark) string {
+	cellEntries := uslices.MapFunc(marks, func(item entities.Mark) CellEntry {
+		return CellEntry{
+			Mark:      &item,
+			LessonId:  item.LessonId,
+			StudentId: item.StudentId,
+		}
+	})
+	cellEntries = append(cellEntries, uslices.MapFunc(absences, func(item entities.Absence) CellEntry {
+		return CellEntry{
+			Absence:   &item,
+			LessonId:  item.LessonId,
+			StudentId: item.StudentId,
+		}
+	})...)
+
+	groupedEntries := uslices.GroupBy(cellEntries, func(item CellEntry) string {
 		return lessonMap[item.LessonId].StartTime.Format("20060102") + lessonMap[item.LessonId].SubjectId.String()
 	})
 
@@ -194,18 +235,26 @@ func (c *controller) getStudentJournal(ctx context.Context, enrollment models.En
 		return a[0].StartTime.Compare(b[0].StartTime)
 	})
 
-	cells := uslices.MapFunc(groupedMarks, func(marks []entities.Mark) dto.JournalCellResponse {
+	cells := uslices.MapFunc(groupedEntries, func(entries []CellEntry) dto.JournalCellResponse {
 		return dto.JournalCellResponse{
 			Point: dto.JournalCellPointResponse{
-				RowId:    lessonMap[marks[0].LessonId].SubjectId.String(),
-				ColumnId: lessonMap[marks[0].LessonId].StartTime.Format("20060102"),
+				RowId:    lessonMap[entries[0].LessonId].SubjectId.String(),
+				ColumnId: lessonMap[entries[0].LessonId].StartTime.Format("20060102"),
 			},
-			Marks: uslices.MapFunc(marks, func(item entities.Mark) dto.JournalCellMarkResponse {
+			Marks: uslices.MapFunc(uslices.FilterFunc(entries, func(item CellEntry) bool { return item.Mark != nil }), func(item CellEntry) dto.JournalCellMarkResponse {
 				return dto.JournalCellMarkResponse{
-					Id:        item.ID.String(),
-					Mark:      item.Mark,
-					LessonId:  item.LessonId.String(),
-					StudentId: item.StudentId.String(),
+					Id:        item.Mark.ID.String(),
+					Mark:      item.Mark.Mark,
+					LessonId:  item.Mark.LessonId.String(),
+					StudentId: item.Mark.StudentId.String(),
+				}
+			}),
+			Absences: uslices.MapFunc(uslices.FilterFunc(entries, func(item CellEntry) bool { return item.Absence != nil }), func(item CellEntry) dto.JournalCellAbsenceResponse {
+				return dto.JournalCellAbsenceResponse{
+					Id:        item.Absence.ID.String(),
+					Absence:   item.Absence.Absence,
+					LessonId:  item.Absence.LessonId.String(),
+					StudentId: item.Absence.StudentId.String(),
 				}
 			}),
 		}

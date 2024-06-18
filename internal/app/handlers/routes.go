@@ -32,6 +32,13 @@ func (h *http) ConfigureRoutes() *hc.Engine {
 				lessonInfo.DELETE(":id", h.DeleteLessonInfo)
 				lessonInfo.PUT("", h.EditLessonInfo)
 			}
+
+			absences := withAuth.Group("absences")
+			{
+				absences.POST("", h.AddAbsence)
+				absences.DELETE(":id", h.DeleteAbsence)
+				absences.PUT("", h.EditAbsence)
+			}
 		}
 	}
 

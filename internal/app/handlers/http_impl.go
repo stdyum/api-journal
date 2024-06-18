@@ -203,3 +203,63 @@ func (h *http) EditLessonInfo(ctx *hc.Context) {
 
 	ctx.Status(netHttp.StatusNoContent)
 }
+
+func (h *http) AddAbsence(ctx *hc.Context) {
+	enrollment := ctx.Enrollment()
+
+	var req dto.AddAbsenceRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		return
+	}
+
+	mark, err := h.controller.AddAbsences(ctx, enrollment, req)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	ctx.JSON(netHttp.StatusOK, mark)
+}
+
+func (h *http) DeleteAbsence(ctx *hc.Context) {
+	enrollment := ctx.Enrollment()
+
+	id, err := ctx.UUIDParam("id")
+	if err != nil {
+		return
+	}
+
+	lessonId, err := ctx.QueryUUID("lessonId")
+	if err != nil {
+		return
+	}
+
+	req := dto.DeleteAbsenceRequest{
+		Id:       id,
+		LessonId: lessonId,
+	}
+	err = h.controller.DeleteAbsence(ctx, enrollment, req)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	ctx.Status(netHttp.StatusNoContent)
+}
+
+func (h *http) EditAbsence(ctx *hc.Context) {
+	enrollment := ctx.Enrollment()
+
+	var req dto.EditAbsenceRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		return
+	}
+
+	err := h.controller.EditAbsence(ctx, enrollment, req)
+	if err != nil {
+		_ = ctx.Error(err)
+		return
+	}
+
+	ctx.Status(netHttp.StatusNoContent)
+}

@@ -59,3 +59,21 @@ type DeleteLessonInfoRequest struct {
 	Id       uuid.UUID `json:"id"`
 	LessonId uuid.UUID `json:"lessonId"`
 }
+
+type AddAbsenceRequest struct {
+	Absence   int       `json:"absence"`
+	StudentId uuid.UUID `json:"studentId"`
+	LessonId  uuid.UUID `json:"lessonId"`
+}
+
+type EditAbsenceRequest struct {
+	Id        uuid.UUID `json:"id"`
+	Absence   int       `json:"absence"`
+	StudentId uuid.UUID `json:"studentId"`
+	LessonId  uuid.UUID `json:"lessonId"`
+}
+
+type DeleteAbsenceRequest struct {
+	Id       uuid.UUID `json:"id"`
+	LessonId uuid.UUID `json:"lessonId"`
+}

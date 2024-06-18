@@ -19,6 +19,12 @@ type Repository interface {
 	AddLessonInfo(ctx context.Context, lessonInfo entities.LessonInfo) error
 	DeleteLessonInfo(ctx context.Context, studyPlaceId uuid.UUID, lessonId uuid.UUID, teacherId uuid.UUID, id uuid.UUID) error
 	EditLessonInfo(ctx context.Context, lessonInfo entities.LessonInfo) error
+
+	GetStudentAbsences(ctx context.Context, studyPlaceId uuid.UUID, lessonIds []uuid.UUID, studentId uuid.UUID) ([]entities.Absence, error)
+	GetLessonsAbsences(ctx context.Context, studyPlaceId uuid.UUID, lessonIds []uuid.UUID) ([]entities.Absence, error)
+	AddAbsence(ctx context.Context, absence entities.Absence) error
+	DeleteAbsence(ctx context.Context, studyPlaceId uuid.UUID, lessonId uuid.UUID, teacherId uuid.UUID, markId uuid.UUID) error
+	EditAbsence(ctx context.Context, mark entities.Absence) error
 }
 
 type repository struct {

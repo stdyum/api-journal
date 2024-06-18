@@ -58,8 +58,9 @@ type JournalColumnResponse struct {
 }
 
 type JournalCellResponse struct {
-	Point JournalCellPointResponse  `json:"point"`
-	Marks []JournalCellMarkResponse `json:"marks"`
+	Point    JournalCellPointResponse     `json:"point"`
+	Marks    []JournalCellMarkResponse    `json:"marks"`
+	Absences []JournalCellAbsenceResponse `json:"absences"`
 }
 
 type JournalCellPointResponse struct {
@@ -74,10 +75,26 @@ type JournalCellMarkResponse struct {
 	StudentId string `json:"studentId"`
 }
 
+type JournalCellAbsenceResponse struct {
+	Id        string `json:"id"`
+	Absence   int    `json:"absence"`
+	LessonId  string `json:"lessonId"`
+	StudentId string `json:"studentId"`
+}
+
 type AddMarkResponse struct {
 	ID           uuid.UUID `json:"id"`
 	StudyPlaceId uuid.UUID `json:"studyPlaceId"`
 	Mark         string    `json:"mark"`
+	StudentId    uuid.UUID `json:"studentId"`
+	TeacherId    uuid.UUID `json:"teacherId"`
+	LessonId     uuid.UUID `json:"lessonId"`
+}
+
+type AddAbsenceResponse struct {
+	ID           uuid.UUID `json:"id"`
+	StudyPlaceId uuid.UUID `json:"studyPlaceId"`
+	Absence      int       `json:"absence"`
 	StudentId    uuid.UUID `json:"studentId"`
 	TeacherId    uuid.UUID `json:"teacherId"`
 	LessonId     uuid.UUID `json:"lessonId"`

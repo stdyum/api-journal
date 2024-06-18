@@ -49,3 +49,24 @@ func (r *repository) scanLessonInfo(row databases.Scan) (lessonInfo entities.Les
 
 	return
 }
+
+func (r *repository) scanAbsence(row databases.Scan) (absence entities.Absence, err error) {
+	var id, studyPlaceId, studentId, teacherId, lessonId gocql.UUID
+
+	err = row.Scan(
+		&id,
+		&studyPlaceId,
+		&absence.Absence,
+		&studentId,
+		&teacherId,
+		&lessonId,
+	)
+
+	absence.ID = uuid.UUID(id)
+	absence.StudyPlaceId = uuid.UUID(studyPlaceId)
+	absence.StudentId = uuid.UUID(studentId)
+	absence.TeacherId = uuid.UUID(teacherId)
+	absence.LessonId = uuid.UUID(lessonId)
+
+	return
+}

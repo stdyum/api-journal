@@ -20,6 +20,10 @@ type HTTP interface {
 	AddLessonInfo(ctx *hc.Context)
 	DeleteLessonInfo(ctx *hc.Context)
 	EditLessonInfo(ctx *hc.Context)
+
+	AddAbsence(ctx *hc.Context)
+	DeleteAbsence(ctx *hc.Context)
+	EditAbsence(ctx *hc.Context)
 }
 
 type http struct {
