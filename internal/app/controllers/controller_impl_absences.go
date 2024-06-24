@@ -8,7 +8,6 @@ import (
 	"github.com/stdyum/api-common/models"
 	"github.com/stdyum/api-journal/internal/app/controllers/dto"
 	"github.com/stdyum/api-journal/internal/app/repositories/entities"
-	"github.com/stdyum/api-journal/internal/modules/schedule"
 )
 
 func (c *controller) AddAbsences(ctx context.Context, enrollment models.Enrollment, request dto.AddAbsenceRequest) (dto.AddAbsenceResponse, error) {
@@ -16,18 +15,20 @@ func (c *controller) AddAbsences(ctx context.Context, enrollment models.Enrollme
 		return dto.AddAbsenceResponse{}, errors.New("role: no permission")
 	}
 
-	lesson, err := c.schedule.GetLessonById(ctx, schedule.GetLessonByIdRequest{
-		Token:        enrollment.Token,
-		StudyPlaceId: enrollment.StudyPlaceId,
-		UUID:         request.LessonId,
-	})
-	if err != nil {
-		return dto.AddAbsenceResponse{}, err
-	}
+	//todo
 
-	if lesson.TeacherId != enrollment.TypeId {
-		return dto.AddAbsenceResponse{}, errors.New("teacherId: no permission")
-	}
+	//lesson, err := c.schedule.GetLessonById(ctx, schedule.GetLessonByIdRequest{
+	//	Token:        enrollment.Token,
+	//	StudyPlaceId: enrollment.StudyPlaceId,
+	//	UUID:         request.LessonId,
+	//})
+	//if err != nil {
+	//	return dto.AddAbsenceResponse{}, err
+	//}
+	//
+	//if lesson.TeacherId != enrollment.TypeId {
+	//	return dto.AddAbsenceResponse{}, errors.New("teacherId: no permission")
+	//}
 
 	absence := entities.Absence{
 		ID:           uuid.New(),
@@ -35,10 +36,10 @@ func (c *controller) AddAbsences(ctx context.Context, enrollment models.Enrollme
 		Absence:      request.Absence,
 		StudentId:    request.StudentId,
 		TeacherId:    enrollment.TypeId,
-		LessonId:     lesson.ID,
+		LessonId:     request.LessonId,
 	}
 
-	err = c.repository.AddAbsence(ctx, absence)
+	err := c.repository.AddAbsence(ctx, absence)
 	if err != nil {
 		return dto.AddAbsenceResponse{}, err
 	}
